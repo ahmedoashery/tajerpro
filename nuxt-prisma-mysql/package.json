@@ -1,0 +1,27 @@
+{
+  "name": "tajirpro-nuxt-prisma-mysql",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev --port 3000",
+    "build": "prisma generate && nuxt build",
+    "start": "node .output/server/index.mjs",
+    "postinstall": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev --name init",
+    "db:seed": "tsx prisma/seed.ts",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "@nuxt/ui": "^3.0.2",
+    "@prisma/client": "^6.5.0",
+    "nuxt": "^3.16.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "prisma": "^6.5.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

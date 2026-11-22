@@ -1,0 +1,170 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --font-display: 'Cairo', 'IBM Plex Sans Arabic', sans-serif;
+    --font-sans: 'IBM Plex Sans Arabic', 'Cairo', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+
+  html {
+    font-family: var(--font-sans);
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+  }
+
+  .font-mono-num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Base document layout styles shared between Print, Preview Modal, PNG & PDF exports */
+.print-a4-sheet {
+  width: 100%;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.print-thermal-80mm {
+  width: 78mm;
+  max-width: 100%;
+  margin: 0 auto;
+  background: #ffffff;
+  color: #000000;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.print-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.print-table th,
+.print-table td {
+  border: 1px solid #cbd5e1;
+  padding: 6px 8px;
+  color: #0f172a;
+  vertical-align: top;
+}
+
+.print-table th {
+  background-color: #f8fafc;
+  font-weight: 700;
+}
+
+.print-avoid-break {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Hide dedicated print-portal container on screen */
+@media screen {
+  .print-only,
+  #print-portal-root {
+    display: none !important;
+  }
+}
+
+/* Dedicated Print Stylesheet — hides all desktop UI chrome & forces crisp white paper */
+@media print {
+  @page {
+    size: auto;
+    margin: 10mm;
+  }
+
+  html,
+  body,
+  #root {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Override dark mode colors when printing */
+  html.dark,
+  html.dark body,
+  html.dark #root,
+  html.dark * {
+    color-scheme: light !important;
+  }
+
+  /* Reset scrollable desktop MDI containers so multi-page reports never clip */
+  .print-shell-reset {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: block !important;
+    position: static !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  /* When printing a targeted document via PrintContext, hide the entire desktop shell */
+  body.has-print-document .app-desktop-shell {
+    display: none !important;
+  }
+
+  body.has-print-document #print-portal-root {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  .print-a4-sheet {
+    max-width: 190mm !important;
+    margin: 0 auto !important;
+  }
+
+  .print-thermal-80mm {
+    padding: 4mm 3mm !important;
+  }
+
+  .print-table thead {
+    display: table-header-group !important;
+  }
+
+  tr,
+  .print-avoid-break {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
+

@@ -1,0 +1,6 @@
+{
+  "name": "تاجر برو — إدارة المحلات التجارية",
+  "description": "برنامج احترافي لإدارة المحلات التجارية ونقاط البيع والمخزون اللحظي والدفع الإلكتروني في السوق المصري",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

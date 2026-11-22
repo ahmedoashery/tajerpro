@@ -1,0 +1,14 @@
+node_modules
+dist
+dev-dist
+data
+*.db
+*.db-wal
+*.db-shm
+test
+test-shm
+test-wal
+.env
+.git
+.aistudio
+.tajirpro-keys

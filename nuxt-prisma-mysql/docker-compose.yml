@@ -1,0 +1,34 @@
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: tajirpro_pos
+      MYSQL_USER: tajirpro_user
+      MYSQL_PASSWORD: tajirpro_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "mysql://tajirpro_user:tajirpro_pass@mysql:3306/tajirpro_pos"
+      NUXT_LICENSE_SECRET: "CHANGE_THIS_PRODUCTION_SECRET_KEY"
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+
+volumes:
+  mysql_data:

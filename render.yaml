@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: tajirpro-pos
+    runtime: node
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    disk:
+      name: tajirpro-data
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SQLITE_PATH
+        value: /app/data/tajirpro.db
+      - key: LICENSE_INSTALL_SECRET
+        generateValue: true
+      - key: DB_DRIVER
+        value: sqlite

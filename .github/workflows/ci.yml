@@ -1,0 +1,33 @@
+name: TajirPro CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  verify:
+    name: Typecheck, Accounting Tests & Production Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: TypeScript typecheck
+        run: npm run lint
+
+      - name: Run accounting, inventory & security tests
+        run: npx tsx --test tests/accounting-audit.test.ts
+
+      - name: Build production bundle
+        run: npm run build
