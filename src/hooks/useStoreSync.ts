@@ -170,12 +170,16 @@ export function useStoreSync() {
       const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
       const res = await fetch(buildApiUrl(serverUrlRef.current, '/api/bootstrap'), { headers });
       const contentType = res.headers.get('content-type') || '';
-      if (!res.ok || !contentType.includes('application/json')) {
+      if (!contentType.includes('application/json')) {
         throw new Error(
-          'تعذر تحميل بيانات المتجر: تعذر الوصول إلى خادم البيانات (API). تأكد من تشغيل الخادم الخلفي أو ضبط رابط الخادم من الإعدادات بالأسفل.'
+          `تعذر تحميل بيانات المتجر (HTTP ${res.status}): لم يرجع الخادم استجابة JSON صالحة. تأكد من تشغيل الخادم الخلفي أو ربط رابط الخادم من الإعدادات بالأسفل.`
         );
       }
-      const data = (await res.json()) as BootstrapSnapshot;
+      const rawPayload = (await res.json()) as BootstrapSnapshot & { error?: string };
+      if (!res.ok) {
+        throw new Error(rawPayload?.error || `تعذر تحميل بيانات المتجر (HTTP ${res.status})`);
+      }
+      const data = rawPayload as BootstrapSnapshot;
       setSnapshot(data);
       syncInitialNotifications(data.products || []);
       setReportDigests(data.reportDigests || []);
@@ -208,6 +212,12 @@ export function useStoreSync() {
   }, [refreshBootstrap]);
 
   useEffect(() => {
+    // Vercel serverless hosting does not support persistent WebSocket upgrades on same-origin
+    if (!serverUrl && typeof window !== 'undefined' && window.location.hostname.endsWith('.vercel.app')) {
+      setWsConnected(false);
+      return;
+    }
+
     let ws: WebSocket | null = null;
     let reconnectTimer: number | null = null;
     let closedByUnmount = false;

@@ -63,6 +63,15 @@ export function registerSecurityAndDataRoutes(
   });
 
   // Health & Server Diagnostics (accessible pre-login for Server Config Modal)
+  app.get('/api', (_req, res) => {
+    res.json({
+      ok: true,
+      service: 'tajirpro-api',
+      health: '/api/health',
+      bootstrap: '/api/bootstrap',
+    });
+  });
+
   app.get('/api/health', (_req, res) => {
     const settings = storeDb.getSettings();
     res.json({

@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
@@ -95,6 +96,54 @@ const DB_PATH = process.env.SQLITE_PATH
 
 const GENESIS_HASH = '0000000000000000000000000000000000000000000000000000000000000000';
 
+/**
+ * Opens better-sqlite3 reliably both in standard Node runs and inside bundled serverless
+ * environments (e.g., Vercel Lambda) where __dirname inside node_modules/better-sqlite3
+ * shifts after bundling and its default relative .node lookup fails.
+ */
+function openSqliteDatabase(dbPath: string): Database.Database {
+  try {
+    return new Database(dbPath);
+  } catch (primaryErr) {
+    const nodeReq = createRequire(import.meta.url);
+    const platformArch = `${process.platform}-${process.arch}`;
+    const roots = [process.cwd(), '/var/task'];
+    try {
+      const pkgJsonPath = nodeReq.resolve('better-sqlite3/package.json');
+      roots.unshift(path.resolve(path.dirname(pkgJsonPath), '..', '..'));
+    } catch {
+      // package.json resolve not available in flat bundle
+    }
+
+    const candidates: string[] = [];
+    for (const root of roots) {
+      const base = path.join(root, 'node_modules', 'better-sqlite3');
+      candidates.push(
+        path.join(base, 'build', 'Release', 'better_sqlite3.node'),
+        path.join(base, 'prebuilds', `${platformArch}.node`),
+        path.join(base, 'prebuilds', `linuxmusl-${process.arch}.node`),
+        path.join(base, 'prebuilds', 'linux-x64.node')
+      );
+    }
+
+    for (const candidate of candidates) {
+      if (!fs.existsSync(candidate)) continue;
+      try {
+        const addon = nodeReq(candidate) as Record<string, unknown>;
+        return new Database(dbPath, { nativeBinding: addon as unknown as string });
+      } catch {
+        try {
+          return new Database(dbPath, { nativeBinding: candidate });
+        } catch {
+          // try next candidate
+        }
+      }
+    }
+
+    throw primaryErr;
+  }
+}
+
 export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
   style: 'modern_emerald',
   defaultPaperSize: 'a4',
@@ -180,8 +229,12 @@ export class StoreDatabase {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    this.db = new Database(DB_PATH);
-    this.db.pragma('journal_mode = WAL');
+    this.db = openSqliteDatabase(DB_PATH);
+    try {
+      this.db.pragma('journal_mode = WAL');
+    } catch {
+      // Fallback to default SQLite journal mode on restricted filesystems
+    }
     this.db.pragma('foreign_keys = ON');
     new SchemaManager(this.db).initialize();
     this.scheduledReportsRepo = new ScheduledReportsRepository(this.db);
@@ -3399,6 +3452,20 @@ export class StoreDatabase {
   }
 
   private getAuthSecret(): string {
+    if (process.env.SESSION_AUTH_SECRET && process.env.SESSION_AUTH_SECRET.trim().length >= 16) {
+      return crypto
+        .createHash('sha256')
+        .update(process.env.SESSION_AUTH_SECRET.trim())
+        .digest('hex');
+    }
+    if (IS_SERVERLESS) {
+      const seed =
+        process.env.VERCEL_PROJECT_ID ||
+        process.env.VERCEL_URL ||
+        process.env.AWS_LAMBDA_FUNCTION_NAME ||
+        'tajirpro-serverless-session-key';
+      return crypto.createHash('sha256').update(`tajirpro:${seed}`).digest('hex');
+    }
     const row = this.db.prepare('SELECT auth_secret FROM store_settings WHERE id = 1').get() as
       | { auth_secret?: string }
       | undefined;
