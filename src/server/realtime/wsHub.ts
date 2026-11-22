@@ -3,20 +3,28 @@ import { WebSocket, WebSocketServer } from 'ws';
 import type { RealtimeEvent } from '../../shared/types.ts';
 
 export class RealtimeHub {
-  private wss: WebSocketServer;
+  private wss: WebSocketServer | null = null;
+  public readonly enabled: boolean;
 
-  constructor(httpServer: HttpServer) {
-    this.wss = new WebSocketServer({ noServer: true });
+  constructor(httpServer: HttpServer | null) {
+    if (!httpServer) {
+      this.enabled = false;
+      return;
+    }
+
+    this.enabled = true;
+    const wss = new WebSocketServer({ noServer: true });
+    this.wss = wss;
 
     httpServer.on('upgrade', (req, socket, head) => {
       const pathname = (req.url || '').split('?')[0];
       if (pathname !== '/ws') return;
-      this.wss.handleUpgrade(req, socket, head, (ws) => {
-        this.wss.emit('connection', ws, req);
+      wss.handleUpgrade(req, socket, head, (ws) => {
+        wss.emit('connection', ws, req);
       });
     });
 
-    this.wss.on('connection', (socket) => {
+    wss.on('connection', (socket) => {
       const count = this.getClientCount();
       this.sendTo(socket, {
         type: 'connected',
@@ -42,6 +50,7 @@ export class RealtimeHub {
   }
 
   public getClientCount(): number {
+    if (!this.wss) return 1;
     let active = 0;
     for (const client of this.wss.clients) {
       if (client.readyState === WebSocket.OPEN) {
@@ -58,6 +67,7 @@ export class RealtimeHub {
   }
 
   public broadcast(event: RealtimeEvent): void {
+    if (!this.wss) return;
     const payload = JSON.stringify(event);
     for (const client of this.wss.clients) {
       if (client.readyState === WebSocket.OPEN) {

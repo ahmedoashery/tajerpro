@@ -18,10 +18,13 @@ export function normalizeServerUrl(raw: string): string {
 
 function getInitialServerUrl(): string {
   try {
-    return normalizeServerUrl(localStorage.getItem(SERVER_URL_STORAGE_KEY) || '');
+    const stored = normalizeServerUrl(localStorage.getItem(SERVER_URL_STORAGE_KEY) || '');
+    if (stored) return stored;
   } catch {
-    return '';
+    // Ignore storage error
   }
+  const envDefault = (import.meta as { env?: Record<string, string | undefined> }).env?.VITE_API_BASE_URL;
+  return envDefault ? normalizeServerUrl(String(envDefault)) : '';
 }
 
 function getInitialAuthToken(): string {
@@ -166,7 +169,12 @@ export function useStoreSync() {
       const token = authTokenRef.current;
       const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
       const res = await fetch(buildApiUrl(serverUrlRef.current, '/api/bootstrap'), { headers });
-      if (!res.ok) throw new Error('تعذر تحميل بيانات المتجر');
+      const contentType = res.headers.get('content-type') || '';
+      if (!res.ok || !contentType.includes('application/json')) {
+        throw new Error(
+          'تعذر تحميل بيانات المتجر: تعذر الوصول إلى خادم البيانات (API). تأكد من تشغيل الخادم الخلفي أو ضبط رابط الخادم من الإعدادات بالأسفل.'
+        );
+      }
       const data = (await res.json()) as BootstrapSnapshot;
       setSnapshot(data);
       syncInitialNotifications(data.products || []);
@@ -203,19 +211,29 @@ export function useStoreSync() {
     let ws: WebSocket | null = null;
     let reconnectTimer: number | null = null;
     let closedByUnmount = false;
+    let everConnected = false;
+    let consecutiveFailures = 0;
 
     const connect = () => {
+      if (closedByUnmount) return;
       ws = new WebSocket(buildWsUrl(serverUrl));
 
       ws.onopen = () => {
+        everConnected = true;
+        consecutiveFailures = 0;
         setWsConnected(true);
       };
 
       ws.onclose = () => {
         setWsConnected(false);
-        if (!closedByUnmount) {
-          reconnectTimer = window.setTimeout(connect, 2200);
+        if (closedByUnmount) return;
+        consecutiveFailures += 1;
+        // Stop retrying if host has no WebSocket upgrade endpoint (e.g. serverless)
+        if (!everConnected && consecutiveFailures >= 3) {
+          return;
         }
+        const delayMs = Math.min(30_000, 2200 * Math.pow(2, Math.min(consecutiveFailures - 1, 4)));
+        reconnectTimer = window.setTimeout(connect, delayMs);
       };
 
       ws.onerror = () => {

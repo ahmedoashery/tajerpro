@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import type {
@@ -84,7 +85,10 @@ import { ScheduledReportsRepository } from './scheduledReportsRepo.ts';
 import { SchemaManager } from './schemaManager.ts';
 import { TreasuryAndExpensesRepository } from './treasuryAndExpensesRepo.ts';
 
-const DATA_DIR = path.resolve(process.cwd(), 'data');
+const IS_SERVERLESS = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const DATA_DIR = IS_SERVERLESS
+  ? path.join(os.tmpdir(), 'tajirpro-data')
+  : path.resolve(process.cwd(), 'data');
 const DB_PATH = process.env.SQLITE_PATH
   ? path.resolve(process.cwd(), process.env.SQLITE_PATH)
   : path.join(DATA_DIR, 'tajirpro.db');

@@ -42,7 +42,15 @@ git push -u origin main
    - `LICENSE_INSTALL_SECRET=<أي نص سري طويل>`
 4. من تبويب **Settings / Volumes** أضف Volume على المسار `/app/data` لحفظ البيانات بشكل دائم.
 
-#### الخيار ج: استخدام قاعدة بيانات MySQL سحابية (اختياري)
+#### الخيار ج: النشر على Vercel
+1. يدعم المشروع الآن التشغيل على **Vercel** مباشرة عبر `vercel.json` و`api/index.ts` للتجربة والمعاينة السريعة (تُحفظ قاعدة البيانات مؤقتاً في `/tmp` أثناء التجربة).
+2. **للتشغيل الفعلي وحفظ البيانات بشكل دائم** مع استخدام رابط Vercel:
+   - انشر الخادم الخلفي على **Render** أو **Railway**.
+   - أضف في **Vercel → Project Settings → Environment Variables** المتغير:
+     `VITE_API_BASE_URL=https://your-backend-url.onrender.com`
+   - ثم أعد نشر المشروع (**Redeploy**).
+
+#### الخيار د: استخدام قاعدة بيانات MySQL سحابية (اختياري)
 إذا أردت ربط النظام بقاعدة بيانات **MySQL** بدلاً من SQLite (على Hostinger / AWS RDS / PlanetScale / Aiven / Railway MySQL):
 - أضف متغيرات البيئة التالية:
   ```env

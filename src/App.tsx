@@ -328,6 +328,9 @@ function AppShell() {
         <div className="max-w-md rounded-xl border border-rose-200 bg-white p-6 text-center dark:border-rose-900/50 dark:bg-slate-900 space-y-4">
           <div className="font-display text-lg font-bold text-rose-600">تعذر الاتصال بالخادم</div>
           <p className="text-sm text-slate-600 dark:text-slate-400">{error}</p>
+          <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+            في حال النشر على استضافة واجهات مثل Vercel، تأكد من نشر التحديث الأخير أو ربط رابط خادم البيانات (Render / Railway) من زر تغيير عنوان الخادم بالأسفل.
+          </p>
           <div className="text-xs font-mono-num text-slate-500" dir="ltr">
             {serverUrl || window.location.origin}
           </div>

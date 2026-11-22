@@ -70,6 +70,7 @@ export function registerSecurityAndDataRoutes(
       status: 'healthy',
       storeName: settings.storeName,
       dbDriver: settings.dbDriver,
+      realtimeWs: wsHub.enabled,
       uptimeSec: Math.floor(process.uptime()),
       serverTime: new Date().toISOString(),
     });

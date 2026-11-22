@@ -2,62 +2,16 @@ import 'dotenv/config';
 import http from 'node:http';
 import path from 'node:path';
 import express from 'express';
-import { StoreDatabase } from './src/server/db/storeDatabase.ts';
-import { RealtimeHub } from './src/server/realtime/wsHub.ts';
-import { registerCommerceRoutes } from './src/server/routes/commerceRoutes.ts';
-import { registerEquityAndReportsRoutes } from './src/server/routes/equityAndReportsRoutes.ts';
-import { registerFeatureRoutes } from './src/server/routes/featureRoutes.ts';
-import { registerPartnersAndTreasuryRoutes } from './src/server/routes/partnersAndTreasuryRoutes.ts';
-import { registerQuotationsRoutes } from './src/server/routes/quotationsRoutes.ts';
-import { registerScheduledReportsRoutes } from './src/server/routes/scheduledReportsRoutes.ts';
-import { registerSecurityAndDataRoutes } from './src/server/routes/securityAndDataRoutes.ts';
-import { createRouteAuthContext } from './src/server/security/authContext.ts';
-import {
-  safeJsonErrorMiddleware,
-  securityHeadersMiddleware,
-} from './src/server/security/requestValidation.ts';
-import { ScheduledReportsService } from './src/server/services/scheduledReportsService.ts';
+import { createStoreApp } from './src/server/createApp.ts';
 
 async function startServer() {
-  const app = express();
-  app.use(express.json({ limit: '15mb' }));
-  app.use(securityHeadersMiddleware);
+  const placeholderApp = express();
+  const httpServer = http.createServer(placeholderApp);
+  const { app, scheduledReportsService } = createStoreApp({ httpServer });
 
-  // Support connecting from external / LAN desktop or PWA clients configured via Server Config Modal
-  app.use((req, res, next) => {
-    const origin = req.header('origin');
-    if (origin) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Vary', 'Origin');
-    } else {
-      res.setHeader('Access-Control-Allow-Origin', '*');
-    }
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-actor-user-id, x-admin-pin');
-    if (req.method === 'OPTIONS') {
-      res.sendStatus(204);
-      return;
-    }
-    next();
-  });
-
-  const httpServer = http.createServer(app);
-  const storeDb = new StoreDatabase();
-  const wsHub = new RealtimeHub(httpServer);
-  const scheduledReportsService = new ScheduledReportsService(storeDb, wsHub);
-  const auth = createRouteAuthContext(storeDb);
-
-  // Register modular domain route groups
-  registerSecurityAndDataRoutes(app, storeDb, wsHub, auth);
-  registerCommerceRoutes(app, storeDb, wsHub, auth);
-  registerPartnersAndTreasuryRoutes(app, storeDb, wsHub, auth);
-  registerQuotationsRoutes(app, storeDb, wsHub, auth);
-  registerEquityAndReportsRoutes(app, storeDb, wsHub, auth);
-  registerScheduledReportsRoutes(app, storeDb, scheduledReportsService, wsHub, auth);
-  registerFeatureRoutes(app, storeDb, wsHub, auth);
-
-  // Safe JSON error fallback for /api routes (hides stack traces in responses)
-  app.use(safeJsonErrorMiddleware);
+  // Forward HTTP requests from httpServer to the configured Express app
+  httpServer.removeAllListeners('request');
+  httpServer.on('request', app);
 
   // Vite middleware in dev, static dist in production
   if (process.env.NODE_ENV !== 'production') {

@@ -4,7 +4,12 @@ import os from 'node:os';
 import path from 'node:path';
 import type { LicensePayload, LicenseStatus } from '../../shared/types.ts';
 
-const KEYS_DIR = path.resolve(process.cwd(), '.tajirpro-keys');
+const IS_SERVERLESS = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const KEYS_DIR = process.env.TAJIRPRO_KEYS_DIR
+  ? path.resolve(process.env.TAJIRPRO_KEYS_DIR)
+  : IS_SERVERLESS
+    ? path.join(os.tmpdir(), '.tajirpro-keys')
+    : path.resolve(process.cwd(), '.tajirpro-keys');
 const PRIVATE_KEY_FILE = path.join(KEYS_DIR, 'issuer_ed25519.pem');
 const PUBLIC_KEY_FILE = path.join(KEYS_DIR, 'verify_ed25519.pem');
 const INSTALL_SALT_FILE = path.join(KEYS_DIR, 'install.salt');
