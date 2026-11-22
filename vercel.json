@@ -1,10 +1,11 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "npm install --include=dev --legacy-peer-deps",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "functions": {
     "api/handler.ts": {
-      "includeFiles": "{src/server/**,src/shared/**,node_modules/better-sqlite3/prebuilds/**,node_modules/better-sqlite3/build/**}",
+      "includeFiles": "{src/server/**,src/shared/**,node_modules/better-sqlite3/prebuilds/linux*.node,node_modules/better-sqlite3/build/**}",
       "memory": 1024,
       "maxDuration": 30
     }
@@ -19,7 +20,7 @@
       "destination": "/api/handler?__vpath=$1"
     },
     {
-      "source": "/((?!api(?:/|$)).*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]

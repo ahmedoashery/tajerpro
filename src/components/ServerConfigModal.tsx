@@ -153,7 +153,10 @@ export function ServerConfigModal({
     try {
       const res = await fetch(url);
       const latencyMs = Math.max(1, Math.round(performance.now() - t0));
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const contentType = res.headers.get('content-type') || '';
+      if (!res.ok || !contentType.includes('application/json')) {
+        throw new Error(`HTTP ${res.status} (${url})`);
+      }
       const data = (await res.json()) as {
         ok: boolean;
         storeName: string;
@@ -314,6 +317,13 @@ export function ServerConfigModal({
     }
     const base = serverUrl || '';
     const res = await fetch(`${base}/api/database/mysql-schema`);
+    if (!res.ok) {
+      setDbMsg({
+        ok: false,
+        text: `تعذر تحميل هيكل MySQL SQL (/api/database/mysql-schema -> HTTP ${res.status})`,
+      });
+      return;
+    }
     const txt = await res.text();
     setSchemaText(txt);
     setShowSchema(true);

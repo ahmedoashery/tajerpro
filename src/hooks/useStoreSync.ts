@@ -19,7 +19,12 @@ export function normalizeServerUrl(raw: string): string {
 function getInitialServerUrl(): string {
   try {
     const stored = normalizeServerUrl(localStorage.getItem(SERVER_URL_STORAGE_KEY) || '');
-    if (stored) return stored;
+    if (stored) {
+      if (typeof window !== 'undefined' && stored === normalizeServerUrl(window.location.origin)) {
+        return '';
+      }
+      return stored;
+    }
   } catch {
     // Ignore storage error
   }
@@ -109,7 +114,11 @@ export function useStoreSync() {
   const alertTimerRef = useRef<number | null>(null);
 
   const setServerUrl = useCallback((nextUrl: string) => {
-    const clean = normalizeServerUrl(nextUrl);
+    const normalized = normalizeServerUrl(nextUrl);
+    const clean =
+      typeof window !== 'undefined' && normalized === normalizeServerUrl(window.location.origin)
+        ? ''
+        : normalized;
     try {
       if (clean) localStorage.setItem(SERVER_URL_STORAGE_KEY, clean);
       else localStorage.removeItem(SERVER_URL_STORAGE_KEY);
@@ -402,9 +411,12 @@ export function useStoreSync() {
       if (authTokenRef.current && !headers.has('Authorization')) {
         headers.set('Authorization', `Bearer ${authTokenRef.current}`);
       }
-      const res = await fetch(buildApiUrl(serverUrlRef.current, url), { ...options, headers });
+      const method = (options?.method || 'GET').toUpperCase();
+      const requestUrl = buildApiUrl(serverUrlRef.current, url);
+      const res = await fetch(requestUrl, { ...options, headers });
       const contentType = res.headers.get('content-type') || '';
-      const data = contentType.includes('application/json')
+      const isJson = contentType.includes('application/json');
+      const data = isJson
         ? await res.json().catch(() => ({}))
         : { error: await res.text().catch(() => '') };
       if (!res.ok) {
@@ -416,8 +428,20 @@ export function useStoreSync() {
           setIsAuthenticated(false);
           refreshBootstrap();
         }
+        if (!isJson) {
+          const rawSnippet = String((data as { error?: string })?.error || '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, 140);
+          throw new Error(
+            `تعذر الوصول لنقطة الخادم (${method} ${url} -> HTTP ${res.status})${
+              rawSnippet ? `: ${rawSnippet}` : ''
+            }. تأكد من رفع أحدث نسخة من vercel.json ومجلد api/ على GitHub وإعادة النشر على Vercel.`
+          );
+        }
         throw new Error(
-          (data as { error?: string })?.error || 'حدث خطأ أثناء تنفيذ العملية'
+          (data as { error?: string })?.error || `حدث خطأ أثناء تنفيذ العملية (HTTP ${res.status})`
         );
       }
       return data as T;
