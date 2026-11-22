@@ -167,4 +167,27 @@ export function registerScheduledReportsRoutes(
       });
     }
   });
+
+  app.get('/api/cron/scheduled-reports', async (req, res) => {
+    try {
+      const cronSecret = process.env.CRON_SECRET?.trim();
+      if (cronSecret) {
+        const authHeader = req.header('authorization') || '';
+        if (authHeader !== `Bearer ${cronSecret}`) {
+          res.status(401).json({ error: 'Unauthorized cron trigger' });
+          return;
+        }
+      }
+      const dispatched = await scheduler.tick();
+      res.json({
+        ok: true,
+        dispatchedCount: dispatched.length,
+        serverTime: new Date().toISOString(),
+      });
+    } catch (err) {
+      res.status(500).json({
+        error: err instanceof Error ? err.message : 'تعذر تشغيل المهام المجدولة',
+      });
+    }
+  });
 }

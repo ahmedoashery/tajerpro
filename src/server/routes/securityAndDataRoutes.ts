@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import type express from 'express';
 import type { PermissionKey, UserRole } from '../../shared/types.ts';
 import {
@@ -9,6 +11,7 @@ import type { StoreDatabase } from '../db/storeDatabase.ts';
 import type { RealtimeHub } from '../realtime/wsHub.ts';
 import type { RouteAuthContext } from '../security/authContext.ts';
 import { SlidingWindowRateLimiter } from '../security/rateLimiter.ts';
+import { buildZipBuffer, collectDirectoryZipEntries } from '../utils/zipBuilder.ts';
 
 /**
  * Modular Express routes for Authentication, Health/Bootstrap, Staff RBAC,
@@ -70,6 +73,33 @@ export function registerSecurityAndDataRoutes(
       health: '/api/health',
       bootstrap: '/api/bootstrap',
     });
+  });
+
+  app.get('/api/download/nuxt-project.zip', (_req, res) => {
+    const nuxtDir = path.resolve(process.cwd(), 'nuxt-prisma-mysql');
+    if (!fs.existsSync(nuxtDir)) {
+      res.status(404).json({ error: 'مجلد مشروع Nuxt غير متوفر في هذه البيئة.' });
+      return;
+    }
+    const entries = collectDirectoryZipEntries(nuxtDir, { prefixDir: 'tajirpro-nuxt-prisma-mysql' });
+    const zipBuf = buildZipBuffer(entries);
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', 'attachment; filename="tajirpro-nuxt-prisma-mysql.zip"');
+    res.setHeader('Content-Length', String(zipBuf.length));
+    res.send(zipBuf);
+  });
+
+  app.get('/api/download/full-project.zip', (_req, res) => {
+    const rootDir = process.cwd();
+    const entries = collectDirectoryZipEntries(rootDir, {
+      prefixDir: 'tajirpro-full-project',
+      extraIgnoredDirs: new Set(['nuxt-prisma-mysql']),
+    });
+    const zipBuf = buildZipBuffer(entries);
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', 'attachment; filename="tajirpro-full-project.zip"');
+    res.setHeader('Content-Length', String(zipBuf.length));
+    res.send(zipBuf);
   });
 
   app.get('/api/health', (_req, res) => {

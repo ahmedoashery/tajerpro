@@ -6,6 +6,7 @@ import type { NavTabId } from './Sidebar';
 
 interface StatusBarProps {
   wsConnected: boolean;
+  serverlessHttp?: boolean;
   connectedTerminals: number;
   settings: StoreSettings;
   activeActivity: StoreActivityProfile;
@@ -22,6 +23,7 @@ interface StatusBarProps {
 
 export function StatusBar({
   wsConnected,
+  serverlessHttp = false,
   connectedTerminals,
   settings,
   activeActivity,
@@ -50,7 +52,7 @@ export function StatusBar({
     <footer className="no-print hidden md:flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 bg-white px-4 py-1.5 text-[11px] text-slate-600 select-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
       <div className="flex flex-wrap items-center gap-4">
         <span className="flex items-center gap-1.5 font-medium">
-          {wsConnected ? (
+          {wsConnected || serverlessHttp ? (
             <Wifi className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
           ) : (
             <WifiOff className="h-3.5 w-3.5 text-rose-600" />
@@ -58,7 +60,9 @@ export function StatusBar({
           <span>
             {wsConnected
               ? `مزامنة لحظية (${connectedTerminals} جهاز)`
-              : 'غير متصل بالخادم'}
+              : serverlessHttp
+                ? 'متصل بخادم Vercel (HTTPS)'
+                : 'غير متصل بالخادم'}
           </span>
         </span>
 

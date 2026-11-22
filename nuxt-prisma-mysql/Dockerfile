@@ -3,7 +3,7 @@ WORKDIR /app
 
 COPY package*.json ./
 COPY prisma ./prisma
-RUN npm ci
+RUN npm install --include=dev --legacy-peer-deps
 RUN npx prisma generate
 
 COPY . .

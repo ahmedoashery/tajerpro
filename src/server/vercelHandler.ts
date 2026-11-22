@@ -1,14 +1,14 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { createStoreApp } from './createApp.ts';
+import { createStoreApp, type StoreAppContext } from './createApp.ts';
 
-let cachedHandler: ((req: IncomingMessage, res: ServerResponse) => void) | null = null;
+let cachedContext: StoreAppContext | null = null;
+let lastSchedulerTickAt = 0;
 
-function getHandler(): (req: IncomingMessage, res: ServerResponse) => void {
-  if (!cachedHandler) {
-    const { app } = createStoreApp({ httpServer: null });
-    cachedHandler = app;
+function getAppContext(): StoreAppContext {
+  if (!cachedContext) {
+    cachedContext = createStoreApp({ httpServer: null });
   }
-  return cachedHandler;
+  return cachedContext;
 }
 
 function normalizeVercelApiUrl(req: IncomingMessage): void {
@@ -23,7 +23,7 @@ function normalizeVercelApiUrl(req: IncomingMessage): void {
     return;
   }
 
-  // Also ensure /api/... keeps its /api prefix even if invoked via catch-all or stripped prefix
+  // Ensure /api/... keeps its /api prefix even if invoked via catch-all or stripped prefix
   if (!parsed.pathname.startsWith('/api')) {
     const qs = parsed.searchParams.toString();
     const clean = parsed.pathname.replace(/^\/+/, '');
@@ -34,7 +34,18 @@ function normalizeVercelApiUrl(req: IncomingMessage): void {
 export default function vercelHandler(req: IncomingMessage, res: ServerResponse): void {
   try {
     normalizeVercelApiUrl(req);
-    getHandler()(req, res);
+    const ctx = getAppContext();
+
+    // Opportunistically evaluate scheduled reports once per minute on bootstrap requests in Vercel
+    const now = Date.now();
+    if (req.url?.startsWith('/api/bootstrap') && now - lastSchedulerTickAt >= 60_000) {
+      lastSchedulerTickAt = now;
+      void ctx.scheduledReportsService.tick().catch(() => {
+        // Non-fatal background evaluation
+      });
+    }
+
+    ctx.app(req, res);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'تعذر تشغيل خادم المتجر';
     res.statusCode = 500;

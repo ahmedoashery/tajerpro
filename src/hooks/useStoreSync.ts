@@ -211,11 +211,22 @@ export function useStoreSync() {
     refreshBootstrap();
   }, [refreshBootstrap]);
 
+  const isServerlessHost = useMemo(() => {
+    if (serverUrl) return false;
+    return typeof window !== 'undefined' && window.location.hostname.endsWith('.vercel.app');
+  }, [serverUrl]);
+
   useEffect(() => {
-    // Vercel serverless hosting does not support persistent WebSocket upgrades on same-origin
-    if (!serverUrl && typeof window !== 'undefined' && window.location.hostname.endsWith('.vercel.app')) {
+    // Vercel serverless hosting does not support persistent WebSocket upgrades on same-origin;
+    // keep store state fresh via visibility-aware periodic HTTPS polling instead.
+    if (isServerlessHost) {
       setWsConnected(false);
-      return;
+      const timer = window.setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          void refreshBootstrap();
+        }
+      }, 25_000);
+      return () => window.clearInterval(timer);
     }
 
     let ws: WebSocket | null = null;
@@ -358,7 +369,7 @@ export function useStoreSync() {
       if (reconnectTimer) window.clearTimeout(reconnectTimer);
       ws?.close();
     };
-  }, [serverUrl, refreshBootstrap, showToast, triggerUrgentAlert]);
+  }, [serverUrl, isServerlessHost, refreshBootstrap, showToast, triggerUrgentAlert]);
 
   const markNotificationRead = useCallback((id: string) => {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
@@ -481,6 +492,7 @@ export function useStoreSync() {
     setServerUrl,
     authToken,
     isAuthenticated,
+    isServerlessHost,
     snapshot,
     currentUser,
     loading,

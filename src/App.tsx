@@ -60,6 +60,7 @@ function AppShell() {
     serverUrl,
     setServerUrl,
     isAuthenticated,
+    isServerlessHost,
     snapshot,
     currentUser,
     loading,
@@ -329,7 +330,7 @@ function AppShell() {
           <div className="font-display text-lg font-bold text-rose-600">تعذر الاتصال بالخادم</div>
           <p className="text-sm text-slate-600 dark:text-slate-400">{error}</p>
           <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-            في حال النشر على استضافة واجهات مثل Vercel، تأكد من نشر التحديث الأخير أو ربط رابط خادم البيانات (Render / Railway) من زر تغيير عنوان الخادم بالأسفل.
+            تأكد من اكتمال النشر على Vercel وعمل مسار <span dir="ltr" className="font-mono-num">/api/health</span> أو راجع عنوان الخادم من زر الإعدادات بالأسفل.
           </p>
           <div className="text-xs font-mono-num text-slate-500" dir="ltr">
             {serverUrl || window.location.origin}
@@ -900,6 +901,7 @@ function AppShell() {
       {/* Desktop Bottom Status Bar */}
       <StatusBar
         wsConnected={wsConnected}
+        serverlessHttp={isServerlessHost}
         connectedTerminals={snapshot.connectedTerminals}
         settings={snapshot.settings}
         activeActivity={activeActivity}
