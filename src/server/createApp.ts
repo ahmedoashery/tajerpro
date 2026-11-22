@@ -30,6 +30,7 @@ export interface StoreAppContext {
  */
 export function createStoreApp(options?: { httpServer?: HttpServer | null }): StoreAppContext {
   const app = express();
+  app.set('trust proxy', 1);
   app.use(express.json({ limit: '15mb' }));
   app.use(securityHeadersMiddleware);
 

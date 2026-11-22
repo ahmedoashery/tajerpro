@@ -23,6 +23,13 @@ function normalizeVercelApiUrl(req: IncomingMessage): void {
     return;
   }
 
+  // Normalize direct /api/handler invocation (from /api rewrite) to /api
+  if (parsed.pathname === '/api/handler') {
+    const qs = parsed.searchParams.toString();
+    req.url = `/api${qs ? `?${qs}` : ''}`;
+    return;
+  }
+
   // Ensure /api/... keeps its /api prefix even if invoked via catch-all or stripped prefix
   if (!parsed.pathname.startsWith('/api')) {
     const qs = parsed.searchParams.toString();

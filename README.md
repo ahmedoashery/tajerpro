@@ -23,7 +23,7 @@ git push origin main
    - **Install Command:** `npm install --include=dev --legacy-peer-deps`
    - **Build Command:** `npm run build`
    - **Output Directory:** `dist`
-   - **Serverless API Routes:** `api/index.ts` و`api/[...path].ts` (Node.js 22.x)
+   - **Serverless API Route:** `api/handler.ts` (Node.js 22.x)
 3. اضغط **Deploy**.
 
 ### 3) متغيرات البيئة الاختيارية على Vercel

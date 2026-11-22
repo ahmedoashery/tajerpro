@@ -33,10 +33,12 @@ export function registerSecurityAndDataRoutes(
   // Authentication & Signed Session Endpoints (HMAC-SHA256 + rate-limited)
   app.post('/api/auth/login', authGuard, (req, res) => {
     const { userId, pin } = req.body || {};
+    const fwd = req.header('x-forwarded-for');
+    const clientIp = (fwd ? fwd.split(',')[0].trim() : req.socket?.remoteAddress) || 'local';
     const result = storeDb.authenticateWithPin(
       String(userId || ''),
       String(pin || ''),
-      req.ip || 'local'
+      clientIp
     );
     if (!result.ok) {
       const code = result.lockedRemainingSec ? 429 : 401;
@@ -136,10 +138,12 @@ export function registerSecurityAndDataRoutes(
   // Security, Staff RBAC & Cryptographic Licensing
   app.post('/api/security/verify-pin', authGuard, (req, res) => {
     const { userId, pin } = req.body || {};
+    const fwd = req.header('x-forwarded-for');
+    const clientIp = (fwd ? fwd.split(',')[0].trim() : req.socket?.remoteAddress) || 'local';
     const result = storeDb.authenticateWithPin(
       String(userId || ''),
       String(pin || ''),
-      req.ip || 'local'
+      clientIp
     );
     if (!result.ok) {
       const code = result.lockedRemainingSec ? 429 : 401;

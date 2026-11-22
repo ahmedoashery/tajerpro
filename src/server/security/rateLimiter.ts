@@ -56,7 +56,15 @@ export class SlidingWindowRateLimiter {
 
   public middleware(): express.RequestHandler {
     return (req, res, next) => {
-      const key = `${req.ip || req.socket.remoteAddress || 'local'}:${req.path}`;
+      let clientIp = 'local';
+      try {
+        const fwd = req.headers?.['x-forwarded-for'];
+        const firstFwd = Array.isArray(fwd) ? fwd[0] : typeof fwd === 'string' ? fwd.split(',')[0] : '';
+        clientIp = (firstFwd && firstFwd.trim()) || req.socket?.remoteAddress || req.ip || 'local';
+      } catch {
+        clientIp = 'local';
+      }
+      const key = `${clientIp}:${req.path}`;
       const result = this.check(key);
       if (!result.allowed) {
         res.setHeader('Retry-After', String(result.retryAfterSec));

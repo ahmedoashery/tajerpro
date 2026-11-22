@@ -28,7 +28,9 @@ export function createRouteAuthContext(storeDb: StoreDatabase): RouteAuthContext
   const hasValidAdminPin = (req: express.Request): boolean => {
     const adminPin = req.header('x-admin-pin');
     if (!adminPin) return false;
-    return storeDb.verifyAnyOwnerPin(String(adminPin), req.ip || 'local');
+    const fwd = req.header('x-forwarded-for');
+    const clientIp = (fwd ? fwd.split(',')[0].trim() : req.socket?.remoteAddress) || 'local';
+    return storeDb.verifyAnyOwnerPin(String(adminPin), clientIp);
   };
 
   const checkActorPerm = (
