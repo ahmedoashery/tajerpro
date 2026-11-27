@@ -1,10 +1,10 @@
 <template>
-  <UModal v-model:open="open" title="تسجيل الدخول وإعدادات الخادم و MySQL" class="max-w-xl">
+  <UModal v-model:open="open" title="بوابة الدخول وإعدادات الخادم و MySQL" class="max-w-xl">
     <template #body>
       <UTabs v-model="activeTab" :items="tabItems" class="w-full">
         <template #login>
           <form class="space-y-4 pt-3" @submit.prevent="submitPin">
-            <UFormField label="حساب الموظف">
+            <UFormField label="حساب الموظف أو صاحب المحل">
               <USelectMenu
                 v-model="selectedUserId"
                 :items="staffItems"
@@ -14,17 +14,41 @@
               />
             </UFormField>
 
-            <UFormField label="الرمز السري (PIN)" hint="المالك: 1234 · المدير: 2222 · الكاشير: 1111">
-              <UInput v-model="pin" type="password" placeholder="أدخل رمز PIN..." required class="w-full" />
+            <UFormField label="الرمز السري (PIN)">
+              <UInput v-model="pin" type="password" placeholder="أدخل رمز PIN..." required class="w-full font-mono-num" />
             </UFormField>
+
+            <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
+              <span class="text-slate-500">تعبئة سريعة للتجربة:</span>
+              <UButton size="xs" variant="outline" color="neutral" @click="quickFill('usr-owner', '1234')">
+                المالك (1234)
+              </UButton>
+              <UButton size="xs" variant="outline" color="neutral" @click="quickFill('usr-manager', '2222')">
+                المدير (2222)
+              </UButton>
+              <UButton size="xs" variant="outline" color="neutral" @click="quickFill('usr-cashier', '1111')">
+                الكاشير (1111)
+              </UButton>
+            </div>
 
             <UAlert v-if="loginErr" color="error" variant="soft" :title="loginErr" />
 
             <div class="flex items-center justify-between pt-2">
-              <UButton variant="soft" color="neutral" icon="i-lucide-server" @click="activeTab = 'server'">
-                إعدادات الخادم و MySQL
-              </UButton>
-              <UButton type="submit" color="primary" :loading="verifying">دخول للنظام</UButton>
+              <div class="flex items-center gap-2">
+                <UButton variant="soft" color="neutral" icon="i-lucide-server" @click="activeTab = 'server'">
+                  إعدادات الخادم و MySQL
+                </UButton>
+                <UButton
+                  v-if="authToken"
+                  variant="ghost"
+                  color="error"
+                  size="xs"
+                  @click="handleLogout"
+                >
+                  تسجيل خروج
+                </UButton>
+              </div>
+              <UButton type="submit" color="primary" :loading="verifying">دخول موثق للنظام</UButton>
             </div>
           </form>
         </template>
@@ -32,7 +56,7 @@
         <template #server>
           <div class="space-y-4 pt-3 text-xs">
             <UFormField label="عنوان خادم Nuxt (اتركه فارغاً للنطاق الحالي)">
-              <UInput v-model="draftServerUrl" dir="ltr" placeholder="https://pos.yourstore.com" class="w-full" />
+              <UInput v-model="draftServerUrl" dir="ltr" placeholder="https://tajirpro.vercel.app" class="w-full" />
             </UFormField>
 
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
@@ -51,6 +75,10 @@
               <UFormField label="Password" class="sm:col-span-2">
                 <UInput v-model="mysql.password" type="password" dir="ltr" class="w-full" />
               </UFormField>
+              <label class="sm:col-span-2 flex items-center gap-2 cursor-pointer">
+                <input v-model="mysql.ssl" type="checkbox" class="accent-emerald-600" />
+                <span>تفعيل اتصال SSL/TLS (مطلوب لقواعد MySQL السحابية مع Vercel)</span>
+              </label>
             </div>
 
             <UAlert
@@ -77,7 +105,8 @@
 
 <script setup lang="ts">
 const open = defineModel<boolean>('open', { default: false });
-const { snapshot, currentUserId, serverUrl, apiFetch, refresh } = useTajirStore();
+const { snapshot, currentUserId, serverUrl, authToken, setServerUrl, apiFetch, loginWithPin, logout, refresh } =
+  useTajirStore();
 
 const activeTab = ref('login');
 const selectedUserId = ref(currentUserId.value);
@@ -94,6 +123,7 @@ const mysql = reactive({
   database: 'tajirpro_pos',
   user: 'tajirpro_user',
   password: '',
+  ssl: false,
 });
 
 const tabItems = [
@@ -101,36 +131,55 @@ const tabItems = [
   { label: 'إعدادات الخادم و MySQL', value: 'server', slot: 'server' },
 ];
 
-const staffItems = computed(() =>
-  (snapshot.value?.staff || []).map((u: any) => ({
+const staffItems = computed(() => {
+  const list = snapshot.value?.staff || [
+    { id: 'usr-owner', name: 'الحاج محمود (المالك)', role: 'OWNER' },
+    { id: 'usr-manager', name: 'أحمد سعيد (المدير)', role: 'MANAGER' },
+    { id: 'usr-cashier', name: 'كريم عادل (كاشير)', role: 'CASHIER' },
+  ];
+  return list.map((u: any) => ({
     label: `${u.name} (${u.role})`,
     value: u.id,
-  }))
-);
+  }));
+});
+
+watch(open, (val) => {
+  if (val) {
+    selectedUserId.value = currentUserId.value || staffItems.value[0]?.value || 'usr-owner';
+    draftServerUrl.value = serverUrl.value;
+    loginErr.value = '';
+  }
+});
+
+function quickFill(uid: string, demoPin: string) {
+  selectedUserId.value = uid;
+  pin.value = demoPin;
+}
 
 async function submitPin() {
   verifying.value = true;
   loginErr.value = '';
   try {
-    const res = await apiFetch('/api/auth/verify-pin', {
-      method: 'POST',
-      body: { userId: selectedUserId.value, pin: pin.value },
-    });
-    currentUserId.value = res.user.id;
+    await loginWithPin(selectedUserId.value, pin.value);
     pin.value = '';
     open.value = false;
   } catch (err: any) {
-    loginErr.value = err?.data?.statusMessage || 'رمز الدخول غير صحيح';
+    loginErr.value = err?.data?.statusMessage || err?.message || 'رمز الدخول غير صحيح';
   } finally {
     verifying.value = false;
   }
+}
+
+async function handleLogout() {
+  await logout();
+  open.value = false;
 }
 
 async function testMysql(applyRuntime: boolean) {
   testingMysql.value = true;
   mysqlStatus.value = null;
   try {
-    serverUrl.value = draftServerUrl.value.trim();
+    setServerUrl(draftServerUrl.value);
     const res = await apiFetch('/api/server/test-mysql', {
       method: 'POST',
       body: { ...mysql, applyRuntime },

@@ -1,14 +1,21 @@
 import { createError, defineEventHandler, getRouterParam, readBody } from 'h3';
 import { z } from 'zod';
 import { requirePermission } from '../../utils/crypto';
-import { getPrisma } from '../../utils/prisma';
+import { getPrisma, num } from '../../utils/prisma';
 
 const updateSchema = z.object({
+  name: z.string().min(1).optional(),
+  category: z.string().min(1).optional(),
+  unit: z.string().min(1).optional(),
+  attributeValue: z.string().optional(),
   salePrice: z.number().nonnegative().optional(),
+  halfWholesalePrice: z.number().nonnegative().optional(),
+  wholesalePrice: z.number().nonnegative().optional(),
   costPrice: z.number().nonnegative().optional(),
   stockDelta: z.number().optional(),
   minStockAlert: z.number().nonnegative().optional(),
   maxStockTarget: z.number().nonnegative().optional(),
+  supplierId: z.string().nullable().optional(),
   note: z.string().optional(),
 });
 
@@ -24,11 +31,11 @@ export default defineEventHandler(async (event) => {
     const existing = await tx.product.findUnique({ where: { id } });
     if (!existing) throw createError({ statusCode: 404, statusMessage: 'الصنف غير موجود' });
 
-    const nextSale = body.salePrice ?? Number(existing.salePrice);
-    const nextCost = body.costPrice ?? Number(existing.costPrice);
-    const nextStock = Math.max(0, Number(existing.stockQty) + (body.stockDelta ?? 0));
+    const nextSale = body.salePrice ?? num(existing.salePrice);
+    const nextCost = body.costPrice ?? num(existing.costPrice);
+    const nextStock = Math.max(0, num(existing.stockQty) + (body.stockDelta ?? 0));
 
-    if (nextSale !== Number(existing.salePrice) || nextCost !== Number(existing.costPrice)) {
+    if (nextSale !== num(existing.salePrice) || nextCost !== num(existing.costPrice)) {
       await tx.productPriceHistory.create({
         data: {
           productId: existing.id,
@@ -37,6 +44,7 @@ export default defineEventHandler(async (event) => {
           oldCostPrice: existing.costPrice,
           newCostPrice: nextCost,
           changedById: actor.id,
+          reason: body.note || 'تعديل سعر يدوي',
         },
       });
     }
@@ -57,11 +65,18 @@ export default defineEventHandler(async (event) => {
     return await tx.product.update({
       where: { id },
       data: {
+        name: body.name ?? existing.name,
+        category: body.category ?? existing.category,
+        unit: body.unit ?? existing.unit,
+        attributeValue: body.attributeValue ?? existing.attributeValue,
         salePrice: nextSale,
+        halfWholesalePrice: body.halfWholesalePrice ?? existing.halfWholesalePrice,
+        wholesalePrice: body.wholesalePrice ?? existing.wholesalePrice,
         costPrice: nextCost,
         stockQty: nextStock,
         minStockAlert: body.minStockAlert ?? existing.minStockAlert,
         maxStockTarget: body.maxStockTarget ?? existing.maxStockTarget,
+        supplierId: body.supplierId !== undefined ? body.supplierId : existing.supplierId,
       },
     });
   });

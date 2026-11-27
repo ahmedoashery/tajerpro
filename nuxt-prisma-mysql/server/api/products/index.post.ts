@@ -10,11 +10,15 @@ const createProductSchema = z.object({
   name: z.string().min(1),
   category: z.string().min(1),
   unit: z.string().min(1),
+  attributeValue: z.string().default(''),
   salePrice: z.number().nonnegative(),
+  halfWholesalePrice: z.number().nonnegative().default(0),
+  wholesalePrice: z.number().nonnegative().default(0),
   costPrice: z.number().nonnegative(),
   stockQty: z.number().nonnegative(),
   minStockAlert: z.number().nonnegative().default(5),
   maxStockTarget: z.number().nonnegative().default(50),
+  supplierId: z.string().nullable().optional(),
 });
 
 export default defineEventHandler(async (event) => {
@@ -23,7 +27,12 @@ export default defineEventHandler(async (event) => {
   const prisma = getPrisma();
 
   const product = await prisma.$transaction(async (tx) => {
-    const created = await tx.product.create({ data: body });
+    const created = await tx.product.create({
+      data: {
+        ...body,
+        supplierId: body.supplierId || null,
+      },
+    });
     await tx.stockMovement.create({
       data: {
         productId: created.id,

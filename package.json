@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "tsx server.ts",
+    "auto": "node scripts/auto-start.mjs",
     "start": "node server.ts",
     "build": "vite build",
     "preview": "vite preview",

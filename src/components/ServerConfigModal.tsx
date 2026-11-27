@@ -907,6 +907,34 @@ export function ServerConfigModal({
               </button>
             </div>
 
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3.5 dark:border-emerald-900/50 dark:bg-emerald-950/20 space-y-2.5">
+              <div className="font-bold text-slate-900 dark:text-white">
+                تنزيل حزمة المشروع للتشغيل التلقائي محلياً أو النشر على Vercel
+              </div>
+              <div className="text-[11px] text-slate-600 dark:text-slate-300">
+                بعد فك الضغط، انقر نقراً مزدوجاً على <span dir="ltr" className="font-mono-num font-bold">START-WINDOWS.bat</span> أو{' '}
+                <span dir="ltr" className="font-mono-num font-bold">START-MAC-LINUX.command</span> ليتم تثبيت الحزم وتشغيل الخادم وفتح المتصفح تلقائياً.
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href={`${serverUrl ? serverUrl.replace(/\/+$/, '') : ''}/api/download/full-project.zip`}
+                  download="tajirpro-full-project.zip"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 font-semibold text-white hover:bg-emerald-700 whitespace-nowrap shrink-0"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>تنزيل المشروع الكامل للتشغيل التلقائي (ZIP)</span>
+                </a>
+                <a
+                  href={`${serverUrl ? serverUrl.replace(/\/+$/, '') : ''}/api/download/nuxt-project.zip`}
+                  download="tajirpro-nuxt-prisma-mysql.zip"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 whitespace-nowrap shrink-0"
+                >
+                  <Download className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>تنزيل نسخة Nuxt + Prisma + MySQL لـ Vercel (ZIP)</span>
+                </a>
+              </div>
+            </div>
+
             {integrity && (
               <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 font-semibold text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
                 <CheckCircle2 className="h-4 w-4 shrink-0" />

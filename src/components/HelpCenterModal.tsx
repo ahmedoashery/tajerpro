@@ -1,4 +1,4 @@
-import { BookOpen, Info, Keyboard, ShieldCheck, X } from 'lucide-react';
+import { BookOpen, Download, Info, Keyboard, ShieldCheck, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { LicenseStatus, StoreActivityProfile, StoreSettings } from '../shared/types';
 import { formatDateTimeAr } from '../utils/formatters';
@@ -241,6 +241,34 @@ export function HelpCenterModal({
                   <div className="mt-0.5 font-mono-num font-bold text-slate-900 dark:text-white">
                     {license.payload?.expiresAt ? formatDateTimeAr(license.payload.expiresAt) : 'دائم'}
                   </div>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-4 dark:border-emerald-900/50 dark:bg-emerald-950/20 space-y-2.5">
+                <div className="font-bold text-slate-900 dark:text-white">
+                  تنزيل المشروع والتشغيل التلقائي محلياً أو النشر على Vercel
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                  شغّل ملف <span dir="ltr" className="font-mono-num font-bold">START-WINDOWS.bat</span> أو{' '}
+                  <span dir="ltr" className="font-mono-num font-bold">START-MAC-LINUX.command</span> لتجهيز الحزم وفتح النظام في المتصفح تلقائياً.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <a
+                    href="/api/download/full-project.zip"
+                    download="tajirpro-full-project.zip"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 font-semibold text-white hover:bg-emerald-700"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span>تنزيل المشروع الكامل للتشغيل التلقائي (ZIP)</span>
+                  </a>
+                  <a
+                    href="/api/download/nuxt-project.zip"
+                    download="tajirpro-nuxt-prisma-mysql.zip"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  >
+                    <Download className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>تنزيل نسخة Nuxt + MySQL لـ Vercel (ZIP)</span>
+                  </a>
                 </div>
               </div>
             </div>

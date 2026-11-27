@@ -72,9 +72,11 @@ export function buildZipBuffer(entries: ZipEntryInput[]): Buffer {
     localParts.push(localHeader, nameBuf, payload);
 
     // Central Directory File Header (46 bytes + filename)
+    const isExecutable = cleanPath.endsWith('.command') || cleanPath.endsWith('.sh');
+    const unixMode = isExecutable ? 0o100755 : 0o100644;
     const centralHeader = Buffer.alloc(46);
     centralHeader.writeUInt32LE(0x02014b50, 0);
-    centralHeader.writeUInt16LE(20, 4); // version made by
+    centralHeader.writeUInt16LE((3 << 8) | 20, 4); // version made by: Unix (3) + 2.0
     centralHeader.writeUInt16LE(20, 6); // version needed
     centralHeader.writeUInt16LE(0x0800, 8); // UTF-8
     centralHeader.writeUInt16LE(method, 10);
@@ -88,7 +90,7 @@ export function buildZipBuffer(entries: ZipEntryInput[]): Buffer {
     centralHeader.writeUInt16LE(0, 32); // comment len
     centralHeader.writeUInt16LE(0, 34); // disk start
     centralHeader.writeUInt16LE(0, 36); // internal attrs
-    centralHeader.writeUInt32LE(0, 38); // external attrs
+    centralHeader.writeUInt32LE((unixMode << 16) >>> 0, 38); // external attrs (Unix permissions)
     centralHeader.writeUInt32LE(offset, 42);
 
     centralParts.push(centralHeader, nameBuf);

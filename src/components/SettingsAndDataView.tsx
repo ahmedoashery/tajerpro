@@ -2032,6 +2032,41 @@ export function SettingsAndDataView({
       {/* TAB 6: Comprehensive Data Management (Excel XLSX + JSON Backup/Restore) */}
       {activeTab === 'data_xlsx' && (
         <div className="space-y-5">
+          {/* Download Ready-to-Run Project & Nuxt Vercel Edition */}
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-5 dark:border-emerald-900/50 dark:bg-emerald-950/20 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                  <Download className="h-4 w-4 text-emerald-600" />
+                  <span>تنزيل المشروع للتشغيل التلقائي على جهازك أو النشر على Vercel</span>
+                </div>
+                <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                  بعد فك الضغط، شغّل <code dir="ltr" className="font-mono-num font-bold">START-WINDOWS.bat</code> (لويندوز) أو{' '}
+                  <code dir="ltr" className="font-mono-num font-bold">START-MAC-LINUX.command</code> (لماك ولينكس) أو{' '}
+                  <code dir="ltr" className="font-mono-num font-bold">npm run auto</code> لتثبيت الحزم وفتح المتصفح تلقائياً.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href={`${serverUrl ? serverUrl.replace(/\/+$/, '') : ''}/api/download/full-project.zip`}
+                  download="tajirpro-full-project.zip"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 whitespace-nowrap"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>تنزيل المشروع الكامل للتشغيل التلقائي (ZIP)</span>
+                </a>
+                <a
+                  href={`${serverUrl ? serverUrl.replace(/\/+$/, '') : ''}/api/download/nuxt-project.zip`}
+                  download="tajirpro-nuxt-prisma-mysql.zip"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800 whitespace-nowrap"
+                >
+                  <Download className="h-4 w-4 text-emerald-600" />
+                  <span>تنزيل نسخة Nuxt + Prisma + MySQL لـ Vercel (ZIP)</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
           {/* Quick Full Workbook Export + Backup */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 space-y-3">
@@ -2393,6 +2428,33 @@ export function SettingsAndDataView({
             >
               فتح فحص السلامة والتشخيص
             </button>
+          </div>
+
+          <div className="md:col-span-3 rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 dark:border-emerald-900/50 dark:bg-emerald-950/20 flex flex-wrap items-center justify-between gap-3">
+            <div className="text-xs text-slate-700 dark:text-slate-200">
+              <div className="font-bold">تنزيل الكود المصدري والتشغيل التلقائي بنقرة واحدة</div>
+              <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                يدعم التشغيل التلقائي عبر START-WINDOWS.bat و START-MAC-LINUX.command مع نسخة Nuxt المحدّثة الجاهزة لـ Vercel.
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <a
+                href={`${serverUrl ? serverUrl.replace(/\/+$/, '') : ''}/api/download/full-project.zip`}
+                download="tajirpro-full-project.zip"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-700 whitespace-nowrap"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>المشروع الكامل (ZIP)</span>
+              </a>
+              <a
+                href={`${serverUrl ? serverUrl.replace(/\/+$/, '') : ''}/api/download/nuxt-project.zip`}
+                download="tajirpro-nuxt-prisma-mysql.zip"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 whitespace-nowrap"
+              >
+                <Download className="h-3.5 w-3.5 text-emerald-600" />
+                <span>نسخة Nuxt + MySQL لـ Vercel (ZIP)</span>
+              </a>
+            </div>
           </div>
         </div>
       )}

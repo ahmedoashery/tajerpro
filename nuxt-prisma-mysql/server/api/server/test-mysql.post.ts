@@ -8,6 +8,7 @@ const testSchema = z.object({
   database: z.string().min(1),
   user: z.string().min(1),
   password: z.string().default(''),
+  ssl: z.boolean().default(false),
   applyRuntime: z.boolean().default(false),
 });
 
@@ -15,7 +16,8 @@ export default defineEventHandler(async (event) => {
   const body = testSchema.parse(await readBody(event));
   const encodedUser = encodeURIComponent(body.user);
   const encodedPass = encodeURIComponent(body.password);
-  const url = `mysql://${encodedUser}:${encodedPass}@${body.host}:${body.port}/${body.database}`;
+  const qs = body.ssl ? '?sslaccept=strict' : '';
+  const url = `mysql://${encodedUser}:${encodedPass}@${body.host}:${body.port}/${body.database}${qs}`;
 
   try {
     if (body.applyRuntime) {

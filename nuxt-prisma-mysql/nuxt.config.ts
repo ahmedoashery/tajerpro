@@ -27,13 +27,18 @@ export default defineNuxtConfig({
     },
   },
   runtimeConfig: {
-    databaseUrl: process.env.DATABASE_URL || 'mysql://root:password@127.0.0.1:3306/tajirpro_pos',
+    databaseUrl: process.env.DATABASE_URL || '',
     licenseSecret: process.env.NUXT_LICENSE_SECRET || 'TAJIRPRO-PRODUCTION-HMAC-KEY',
+    sessionSecret:
+      process.env.NUXT_SESSION_SECRET ||
+      process.env.SESSION_AUTH_SECRET ||
+      'TAJIRPRO-NUXT-SESSION-HMAC-SECRET',
+    cronSecret: process.env.CRON_SECRET || '',
     public: {
       appName: 'تاجر برو',
     },
   },
   nitro: {
-    preset: 'node-server',
+    preset: process.env.VERCEL ? 'vercel' : 'node-server',
   },
 });

@@ -25,4 +25,9 @@
     box-shadow: none !important;
     border: none !important;
   }
+  .print-only-sheet.print-thermal-80 {
+    max-width: 80mm !important;
+    margin: 0 auto !important;
+    font-size: 11px !important;
+  }
 }
